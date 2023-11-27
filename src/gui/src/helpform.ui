@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>HelpForm</class>
+ <widget class="QWidget" name="HelpForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>2065</width>
+    <height>1112</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QLabel" name="image">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>2001</width>
+     <height>1031</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>image.png</pixmap>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>1060</y>
+     <width>2001</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Пояснения к таблице: u1_2 - значение при двойном шаге ОЛП - оценка локальной погрешности ОЛП/ОЛПП - отношение локальных погрешностей U1,U2 - точное решение</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>1270</x>
+     <y>880</y>
+     <width>581</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>1 ) Выбор задачи</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>1270</x>
+     <y>910</y>
+     <width>571</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>2) Параметры (если актуально для задачи)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>1270</x>
+     <y>940</y>
+     <width>331</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>3) Участок интегрирования</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>1270</x>
+     <y>970</y>
+     <width>371</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>4) Начальные условия (заполняются соотвественно задаче)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_6">
+   <property name="geometry">
+    <rect>
+     <x>1590</x>
+     <y>880</y>
+     <width>391</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>5) Велечина контроля локальной погрешности</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_7">
+   <property name="geometry">
+    <rect>
+     <x>1590</x>
+     <y>910</y>
+     <width>341</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>6) Начальный шаг метода</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_8">
+   <property name="geometry">
+    <rect>
+     <x>1590</x>
+     <y>940</y>
+     <width>341</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>7) Максимальное кол-во шагов</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>1900</x>
+     <y>1070</y>
+     <width>151</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Автор: Сучков Владисав </string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
