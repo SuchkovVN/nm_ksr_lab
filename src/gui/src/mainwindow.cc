@@ -105,14 +105,14 @@ void MainWindow::on_getdata_buttom_clicked() {
             return du;
         };
         static auto task2_ths2 = [&](double x, double u, double du) {
-            return -0.15 * du - 2.0 * u;
+            return -(B / A) * du - (C / A) * u;
         };
         res1 = utils::RK3_SOE(std::move(task2_rhs1), std::move(task2_ths2), cfg);
 
-        constexpr double bp = std::sqrt(8 - std::pow(0.15, 2)) / 2;
-        constexpr double ap = -0.075;
-        constexpr double fp = -1 * ap / bp;
-        calculate_global_error(res1, [](const double& x) -> double {
+        static const double bp = std::sqrt(4 * A * C - B * B) / (2 * A);
+        static const double ap = -(B / (2 * A));
+        static const double fp = -1 * ap / bp;
+        calculate_global_error(res1, [&](const double& x) -> double {
             return 10 * std::exp(ap * x) * (std::cos(bp * x) + fp * std::sin(bp * x));
         });
         break;
@@ -125,7 +125,7 @@ void MainWindow::on_getdata_buttom_clicked() {
     max_step = find_max_h(res1);
     max_uvi = find_max_uvi(res1);
     min_step = find_min_h(res1);
-    steps_num = res1.size();
+    steps_num = res1.size() - 1;
 
     this->ui->max_h_txt->setText(QString::number(max_step));
     this->ui->min_h_txt->setText(QString::number(min_step));

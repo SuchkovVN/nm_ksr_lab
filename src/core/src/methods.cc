@@ -96,12 +96,20 @@ inline std::vector<double> utils::StepRK4_SOE(std::function<double(double, doubl
                                               const double& step) {
     LOG_DEBUG_CLI("Start StepRK4_SOE step with following config", x, u, step);
 
-    double new_u, new_y;
-    std::vector<double> res;
-    new_u = u + step * rhs1(x + step / 2, u + (step / 2) * (rhs1(x, u, y)), y + (step / 2) * (rhs2(x, u, y)));
-    new_y = y + step * rhs2(x + step / 2, u + (step / 2) * (rhs1(x, u, y)), y + (step / 2) * (rhs2(x, u, y)));
-    res.push_back(new_u);
-    res.push_back(new_y);
+    std::vector<double> res(2);
+    double k[4][2];
+
+    k[0][0] = rhs1(x, u, y);
+    k[0][1] = rhs2(x, u, y);
+    k[1][0] = rhs1(x + step / 2, u + step / 2 * k[0][0], y + step / 2 * k[0][1]);
+    k[1][1] = rhs2(x + step / 2, u + step / 2 * k[0][0], y + step / 2 * k[0][1]);
+    k[2][0] = rhs1(x + step / 2, u + step / 2 * k[1][0], y + step / 2 * k[1][1]);
+    k[2][1] = rhs2(x + step / 2, u + step / 2 * k[1][0], y + step / 2 * k[1][1]);
+    k[3][0] = rhs1(x + step, u + step * k[2][0], y + step * k[2][1]);
+    k[3][1] = rhs2(x + step, u + step * k[2][0], y + step * k[2][1]);
+
+    res[0] = u + step / 6 * (k[0][0] + 2 * k[1][0] + 2 * k[2][0] + k[3][0]);
+    res[1] = y + step / 6 * (k[0][1] + 2 * k[1][1] + 2 * k[2][1] + k[3][1]);
     return (res);
 }
 
@@ -116,93 +124,88 @@ resultTable utils::RK4_SOE(std::function<double(double, double, double)> rhs1, s
     xi = cfg.x_0;
     x_min = cfg.x_min;
     x_max = cfg.x_max;
-    double a = cfg.A;
-    double b = cfg.B;
-    double c = cfg.C;
+    // double a = cfg.A;
+    // double b = cfg.B;
+    // double c = cfg.C;
     ui = cfg.u_0;
     yi = cfg.du_0;
     stepi = cfg.step;
     N_max = cfg.N_max;
     eps = cfg.eps;
-    tableRow row(xi, ui, yi, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, C1, C2, 0.f, 0.f);
+    tableRow row(xi, ui, yi, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, stepi, C1, C2, 0.f, 0.f);
     table.push_back(row);
     if (cfg.LEC) {
         double LocalError, Old_LocalError, viv2i, yiy2i;
         int i = 0;
-        while (xi >= x_min && xi + stepi < x_max && i <= N_max) {
+        while (xi >= x_min && xi + stepi < x_max && i < N_max) {
             //LOG_DEBUG_CLI("Start RK4_SOE with localstecpcontrol", cfg);
             tmp1 = StepRK4_SOE(rhs1, rhs2, xi, ui, yi, stepi);
             tmp2 = StepRK4_SOE(rhs1, rhs2, xi, ui, yi, stepi / 2);
-            tmp2 = StepRK4_SOE(rhs1, rhs2, xi, tmp2.at(0), tmp2.at(1), stepi / 2);
+            tmp2 = StepRK4_SOE(rhs1, rhs2, xi + stepi / 2, tmp2.at(0), tmp2.at(1), stepi / 2);
             Old_LocalError = LocalError;
-            LocalError = std::max(std::abs(tmp1.at(0) - tmp2.at(0)), std::abs(tmp1.at(1) - tmp2.at(1))) / 3;
+            LocalError = std::max(std::abs(tmp1.at(0) - tmp2.at(0)), std::abs(tmp1.at(1) - tmp2.at(1))) / 31;
             //LOG_DEBUG_CLI("tmp generated", cfg);
-            if (LocalError < eps / std::pow(2, 5)) {
+            if (LocalError < eps / 32) {
                 //LOG_DEBUG_CLI("try LocalError < lec", cfg);
                 yi = tmp1.at(1);
                 ui = tmp1.at(0);
                 xi = xi + stepi;
                 viv2i = std::abs(ui - tmp2.at(0));
                 yiy2i = std::abs(yi - tmp2.at(1));
-                //LOG_DEBUG_CLI("viv2i generated", cfg);
-                tableRow row(xi,
-                             ui,
-                             yi,
-                             tmp1.at(0),
-                             tmp2.at(1),
-                             viv2i,
-                             yiy2i,
-                             LocalError,
-                             LocalError / Old_LocalError,
-                             stepi,
-                             C1,
-                             C2,
-                             std::abs((10 / std::exp(xi / 100) - 3 / std::exp(1000 * xi)) - ui),
-                             std::abs((3 / std::exp(1000 * xi) + 10 / std::exp(xi / 100)) - yi));
+
                 //LOG_DEBUG_CLI("try push_back", cfg);
-                table.push_back(row);
+                table.push_back({ xi,
+                                  ui,
+                                  yi,
+                                  tmp1.at(0),
+                                  tmp2.at(0),
+                                  viv2i,
+                                  yiy2i,
+                                  LocalError * 32,
+                                  LocalError / Old_LocalError,
+                                  stepi,
+                                  C1,
+                                  C2,
+                                  std::abs((10 / std::exp(xi / 100) - 3 / std::exp(1000 * xi)) - ui),
+                                  std::abs((3 / std::exp(1000 * xi) + 10 / std::exp(xi / 100)) - yi) });
                 //LOG_DEBUG_CLI("push_back done", cfg);
                 stepi = stepi * 2;
                 C2++;
                 i++;
                 //LOG_DEBUG_CLI("LocalError < lec done", cfg);
-            } else if (LocalError >= eps / std::pow(2, 5) && LocalError <= eps) {
+            } else if (LocalError >= eps / 32 && LocalError <= eps) {
                 //LOG_DEBUG_CLI("LocalError >= lec", cfg);
                 yi = tmp1.at(1);
                 ui = tmp1.at(0);
                 xi = xi + stepi;
                 viv2i = std::abs(ui - tmp2.at(0));
                 yiy2i = std::abs(yi - tmp2.at(1));
-                tableRow row(xi,
-                             ui,
-                             yi,
-                             tmp2.at(0),
-                             tmp2.at(1),
-                             viv2i,
-                             yiy2i,
-                             LocalError * 4,
-                             LocalError / Old_LocalError,
-                             stepi,
-                             C1,
-                             C2,
-                             std::abs((10 / std::exp(xi / 100) - 3 / std::exp(1000 * xi)) - ui),
-                             std::abs((3 / std::exp(1000 * xi) + 10 / std::exp(xi / 100)) - yi));
-                table.push_back(row);
+                table.push_back({ xi,
+                                  ui,
+                                  yi,
+                                  tmp1.at(0),
+                                  tmp2.at(0),
+                                  viv2i,
+                                  yiy2i,
+                                  LocalError * 32,
+                                  LocalError / Old_LocalError,
+                                  stepi,
+                                  C1,
+                                  C2,
+                                  std::abs((10 / std::exp(xi / 100) - 3 / std::exp(1000 * xi)) - ui),
+                                  std::abs((3 / std::exp(1000 * xi) + 10 / std::exp(xi / 100)) - yi) });
                 i++;
             } else if (LocalError > eps) {
                 LOG_DEBUG_CLI("LocalError > lec*", cfg);
                 stepi = stepi / 2;
                 C1++;
-                i++;
-            } else {
-                LOG_ERROR_CLI(cfg);
             }
         }
         return (table);
     } else if (not(cfg.LEC)) {
         //LOG_DEBUG_CLI("Start RK4_SOE without localstecpcontrol", cfg);
         int i = 0;
-        while (xi >= x_min && xi + stepi < x_max && i <= N_max) {
+        while (xi >= x_min && xi + stepi < x_max && i < N_max) {
             tmp1 = StepRK4_SOE(rhs1, rhs2, xi, ui, yi, stepi);
             ui = tmp1.at(0);
             yi = tmp1.at(1);
@@ -288,7 +291,7 @@ resultTable utils::RK3(std::function<double(double, double)>&& rhs, const config
                 vi = v1;
                 xi = xi + stepi;
                 viv2i = std::abs(vi - v2);
-                table.push_back({ xi, vi, 0.f, v2, viv2i, 0.f, 0.f, LocalError, LocalError / Old_LocalError, stepi, C1, C2, 0.f, 0.f });
+                table.push_back({ xi, vi, 0.f, v2, viv2i, 0.f, 0.f, LocalError * 8, LocalError / Old_LocalError, stepi, C1, C2, 0.f, 0.f });
                 stepi = stepi * 2;
                 C2++;
                 i++;
@@ -296,7 +299,7 @@ resultTable utils::RK3(std::function<double(double, double)>&& rhs, const config
                 vi = v1;
                 xi = xi + stepi;
                 viv2i = std::abs(vi - v2);
-                table.push_back({ xi, vi, 0.f, v2, 0.f, viv2i, 0.f, LocalError, LocalError / Old_LocalError, stepi, C1, C2, 0.f, 0.f });
+                table.push_back({ xi, vi, 0.f, v2, 0.f, viv2i, 0.f, LocalError * 8, LocalError / Old_LocalError, stepi, C1, C2, 0.f, 0.f });
                 i++;
 
             } else if (LocalError > eps) {
@@ -323,12 +326,15 @@ inline std::tuple<double, double> RK3_SOE_STEP(std::function<double(double, doub
     k2 = f(x_n + h_n/2, v_n + h_n/2 * k1),
     k3 = f(x_n + h_n, v_n + h_n * (-k1 + 2k2))
     */
-    double vi1_new = vi1 + step / 6 *
-                               (rhs1(x, vi1, vi2) + 4 * (rhs1(x + step / 2, vi1 + step / 2 * rhs1(x, vi1, vi2), vi2)) +
-                                rhs1(x + step, vi1 + step * (-rhs1(x, vi1, vi2) + 2 * (rhs1(x + step / 2, vi1 + step / 2 * rhs1(x, vi1, step), vi2))), vi2));
-    double vi2_new = vi2 + step / 6 *
-                               (rhs2(x, vi1, vi2) + 4 * (rhs2(x + step / 2, vi1, vi2 + step / 2 * rhs2(x, vi1, vi2))) +
-                                rhs2(x + step, vi1, vi2 + +step * (-rhs2(x, vi1, vi2) + 2 * (rhs2(x + step / 2, vi1, vi2 + step / 2 * rhs2(x, vi1, step))))));
+
+    double k11 = rhs1(x, vi1, vi2);
+    double k12 = rhs2(x, vi1, vi2);
+    double k21 = rhs1(x + step / 2, vi1 + step / 2 * k11, vi2 + step / 2 * k12);
+    double k22 = rhs2(x + step / 2, vi1 + step / 2 * k11, vi2 + step / 2 * k12);
+    double k31 = rhs1(x + step, vi1 + step * (-k11 + 2 * k21), vi2 + step * (-k12 + 2 * k22));
+    double k32 = rhs2(x + step, vi1 + step * (-k11 + 2 * k21), vi2 + step * (-k12 + 2 * k22));
+    double vi1_new = vi1 + step / 6 * (k11 + 4 * k21 + k31);
+    double vi2_new = vi2 + step / 6 * (k12 + 4 * k22 + k32);
 
     return { vi1_new, vi2_new };
 }
@@ -346,27 +352,29 @@ resultTable utils::RK3_SOE(std::function<double(double, double, double)>&& rhs1,
     N_max = cfg.N_max;
     eps = cfg.eps;
 
+    table.push_back({ xi, vi, yi, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, stepi, 0, 0, 0.f, 0.f });
+
     if (!cfg.LEC) {
         size_t i = 0;
-        while (xi >= x_min && xi + stepi < x_max && i <= N_max) {
+        while (xi >= x_min && xi + stepi < x_max && i < N_max) {
             auto [vi_new, yi_new] = RK3_SOE_STEP(std::move(rhs1), std::move(rhs2), stepi, xi, vi, yi);
             xi = xi + stepi;
             vi = vi_new;
             yi = yi_new;
 
-            table.push_back({ xi, vi, 0.f, yi, 0.f, 0.f, 0.f, 0.f, 0.f, stepi, 0, 0, 0.f, 0.f });
+            table.push_back({ xi, vi, yi, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, stepi, 0, 0, 0.f, 0.f });
         }
         return table;
     } else {
         double LocalError, Old_LocalError, viv2i, yiy2i;
         size_t i = 0;
-        while (xi >= x_min && xi + stepi < x_max && i <= N_max) {
+        while (xi >= x_min && xi + stepi < x_max && i < N_max) {
             //LOG_DEBUG_CLI("Start RK4_SOE with localstecpcontrol", cfg);
             auto tmp1 = RK3_SOE_STEP(std::move(rhs1), std::move(rhs2), stepi, xi, vi, yi);
             auto tmp2 = RK3_SOE_STEP(std::move(rhs1), std::move(rhs2), stepi / 2, xi, vi, yi);
-            tmp2 = RK3_SOE_STEP(std::move(rhs1), std::move(rhs2), stepi / 2, xi, std::get<0>(tmp2), std::get<1>(tmp2));
+            tmp2 = RK3_SOE_STEP(std::move(rhs1), std::move(rhs2), stepi / 2, xi + stepi / 2, std::get<0>(tmp2), std::get<1>(tmp2));
             Old_LocalError = LocalError;
-            LocalError = std::max(std::abs(std::get<0>(tmp1) - std::get<0>(tmp2)), std::abs(std::get<1>(tmp1) - std::get<1>(tmp2))) / 3;
+            LocalError = std::max(std::abs(std::get<0>(tmp1) - std::get<0>(tmp2)), std::abs(std::get<1>(tmp1) - std::get<1>(tmp2))) / 7;
             //LOG_DEBUG_CLI("tmp generated", cfg);
             if (LocalError < eps / 16) {
                 //LOG_DEBUG_CLI("try LocalError < lec", cfg);
@@ -377,7 +385,8 @@ resultTable utils::RK3_SOE(std::function<double(double, double, double)>&& rhs1,
                 yiy2i = std::abs(yi - std::get<1>(tmp2));
 
                 i++;
-                table.push_back({ xi, vi, yi, std::get<0>(tmp1), std::get<1>(tmp2), viv2i, yiy2i, LocalError, LocalError / Old_LocalError, stepi, C1, C2, 0.f, 0.f });
+                table.push_back(
+                    { xi, vi, yi, std::get<0>(tmp1), std::get<1>(tmp2), viv2i, yiy2i, LocalError * 8, LocalError / Old_LocalError, stepi, C1, C2, 0.f, 0.f });
                 //LOG_DEBUG_CLI("push_back done", cfg);
                 stepi = stepi * 2;
                 C2++;
@@ -391,7 +400,8 @@ resultTable utils::RK3_SOE(std::function<double(double, double, double)>&& rhs1,
                 yiy2i = std::abs(yi - std::get<1>(tmp2));
 
                 i++;
-                table.push_back({ xi, vi, yi, std::get<0>(tmp2), std::get<1>(tmp2), viv2i, yiy2i, LocalError * 4, LocalError / Old_LocalError, stepi, C1, C2, 0.f, 0.f });
+                table.push_back(
+                    { xi, vi, yi, std::get<0>(tmp2), std::get<1>(tmp2), viv2i, yiy2i, LocalError * 8, LocalError / Old_LocalError, stepi, C1, C2, 0.f, 0.f });
             } else if (LocalError > eps) {
                 LOG_DEBUG_CLI("LocalError > lec*", cfg);
                 stepi = stepi / 2;
