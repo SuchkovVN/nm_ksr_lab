@@ -70,6 +70,7 @@ private:
     double min_step = 0.l;
     double max_uvi = 0.l;
     size_t steps_num = 0;
+    config cfg;
 
     HelpForm form;
 };

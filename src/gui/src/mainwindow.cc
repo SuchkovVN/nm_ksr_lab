@@ -1,16 +1,20 @@
 #include "./ui_mainwindow.h"
+#include "logger.hpp"
 #include "mainwindow.h"
 #include "nmlib.hpp"
 #include <cmath>
+#include <cstddef>
 #include <fstream>
 #include <qcustomplot.h>
 #include <qvalidator.h>
+#include <string>
+#include <vector>
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
-    this->ui->plot->xAxis->setLabel("X");
-    this->ui->plot->yAxis->setLabel("Y");
+    this->ui->plot->xAxis->setLabel("t");
+    this->ui->plot->yAxis->setLabel("x(t)");
 
     this->ui->plot->xAxis->setRange(-10, 10);
     this->ui->plot->yAxis->setRange(-7, 7);
@@ -32,7 +36,7 @@ void MainWindow::on_button_plot_clicked() {
     h = this->ui->lineEdit_step->text().toDouble();
     precision = this->ui->lineEdit_precision->text().toDouble();
 
-    for (int i = 0; i < res1.size(); i++) {
+    for (size_t i = 0; i < res1.size(); i++) {
         x.push_back(res1.at(i).xi);
         v.push_back(res1.at(i).vi);
     }
@@ -91,7 +95,15 @@ void MainWindow::on_getdata_buttom_clicked() {
     B = this->ui->lineEdit_b->text().toDouble();
     C = this->ui->lineEdit_c->text().toDouble();
 
-    config cfg = { x_begin, x_end, x_start, y_start, du, h, N, LEC, precision, A, B, C };
+    cfg = { x_begin, x_end, x_start, y_start, du, h, N, LEC, precision, A, B, C, 0b11111111111111 };
+
+    // for system w/ vi and yi w/o LEC (for LEC default value is applicable)
+    if (!LEC) {
+        cfg.set_col_visibility(0b11000000000111);
+    }
+    // if you have only one variable u(x) in your task, you need to specify col_visibility as 0b11000000000011 w/ no lec
+    // and 0b11111110101011 if lec is off (this both cases applicable only if you have a true solution. 
+    // Otherwise you need to set two first bits to zero in cases discribed above)
 
     switch (func) {
     case 0:
@@ -167,33 +179,35 @@ void MainWindow::on_radioButton_mistake_clicked(bool checked) {
 void MainWindow::on_button_table_clicked() {
     ui->tableWidget->clear();
 
+    size_t colsnum = 0;
+    for (size_t i = 0; i < 14; i++) {
+        colsnum = colsnum + static_cast<size_t>(cfg.isColVisible[i]);
+    }
     ui->tableWidget->setRowCount(res1.size());
-    ui->tableWidget->setColumnCount(14);
+    ui->tableWidget->setColumnCount(colsnum);
 
     std::cout << res1.size() << std::endl;
 
-    ui->tableWidget->setHorizontalHeaderLabels(QStringList() << "x"
-                                                             << "u1"
-                                                             << "u2"
-                                                             << "u1_2"
-                                                             << "u2_2"
-                                                             << "u1-u1_2"
-                                                             << "u2-u2_2"
-                                                             << "ОЛП"
-                                                             << "ОЛП/ОЛПП"
-                                                             << "h"
-                                                             << "C1"
-                                                             << "C2"
-                                                             << "u1-U1"
-                                                             << "u2-U2");
+    std::vector<const char*> horizontalLabels = { "x", "v1", "v2", "v1_2", "v2_2", "v1-v1_2", "v2-v2_2", "ОЛП", "ОЛП/ОЛПП", "h", "C1", "C2", "u1", "v1-u1" };
+    QStringList hlabels;
 
-    for (int i = 0; i < res1.size(); i++) {
+    for (size_t i = 0; i < 14; i++) {
+        if (cfg.is_col_visible(i)) {
+            hlabels << horizontalLabels[i];
+        }
+    }
+    ui->tableWidget->setHorizontalHeaderLabels(hlabels);
+
+    for (size_t i = 0; i < res1.size(); i++) {
         auto row_tuple = res1.at(i).get_tuple();
-        int j = 0;
+        size_t j = 0, col = 0;
         apply_elemwise(
             [&](const auto& elem) {
-                QTableWidgetItem* item = new QTableWidgetItem(QString::number(elem));
-                ui->tableWidget->setItem(i, j, item);
+                if (cfg.is_col_visible(j)) {
+                    QTableWidgetItem* item = new QTableWidgetItem(QString::number(elem));
+                    ui->tableWidget->setItem(i, col, item);
+                    col++;
+                }
                 j++;
             },
             row_tuple,

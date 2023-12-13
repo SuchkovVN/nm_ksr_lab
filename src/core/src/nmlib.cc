@@ -1,4 +1,5 @@
 #include "nmlib.hpp"
+#include <bitset>
 
 config utils::make_config(const double& x_min,
                           const double& x_max,
@@ -11,7 +12,8 @@ config utils::make_config(const double& x_min,
                           const double& eps,
                           const double& A,
                           const double& B,
-                          const double& C) {
+                          const double& C,
+                          std::bitset<14> cols) {
     LOG_INFO_CLI("Making some config");
 #if defined(DEBUG)
     LOG_DEBUG_CLI("Making config from python data", "Checking arguments");
@@ -19,7 +21,7 @@ config utils::make_config(const double& x_min,
     NM_ASSERT((x_max >= x_min), "invalid argument x_min > x_max");
     /// @todo write an asserts for other args
 
-    config cfg{ x_min, x_max, x_0, u_0, du_0, step, N_max, LEC, eps, A, B, C };
+    config cfg{ x_min, x_max, x_0, u_0, du_0, step, N_max, LEC, eps, A, B, C, cols };
     LOG_INFO_CLI("Configuration done");
     return cfg;
 }

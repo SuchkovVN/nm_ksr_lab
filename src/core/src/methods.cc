@@ -70,7 +70,6 @@ resultTable utils::RK4(std::function<double(double, double)> rhs, const config& 
             }
         }
         LOG_INFO_CLI("RK4 close", cfg);
-        return (table);
 
     } else if (not(cfg.LEC)) {
         int i = 0;
@@ -82,10 +81,9 @@ resultTable utils::RK4(std::function<double(double, double)> rhs, const config& 
             table.push_back(row);
         }
         LOG_INFO_CLI("RK4 close", cfg);
-        return (table);
-    } else {
-        LOG_INFO_CLI("Error in RK4", cfg);
     }
+
+    return table;
 }
 
 inline std::vector<double> utils::StepRK4_SOE(std::function<double(double, double, double)> rhs1,
@@ -201,7 +199,6 @@ resultTable utils::RK4_SOE(std::function<double(double, double, double)> rhs1, s
                 C1++;
             }
         }
-        return (table);
     } else if (not(cfg.LEC)) {
         //LOG_DEBUG_CLI("Start RK4_SOE without localstecpcontrol", cfg);
         int i = 0;
@@ -227,10 +224,9 @@ resultTable utils::RK4_SOE(std::function<double(double, double, double)> rhs1, s
                          std::abs((3 / std::exp(1000 * xi) + 10 / std::exp(xi / 100)) - yi));
             table.push_back(row);
         }
-        return (table);
-    } else {
-        LOG_INFO_CLI("Error in RK4", cfg);
     }
+
+    return table;
 }
 
 resultTable utils::RK4_LS(std::function<double(double, double, double)> rhs, const config& cfg) {
