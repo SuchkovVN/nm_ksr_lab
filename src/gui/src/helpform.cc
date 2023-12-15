@@ -11,10 +11,6 @@ HelpForm::HelpForm(QWidget *parent) :
     ui(new Ui::HelpForm)
 {
     ui->setupUi(this);
-    QString filename(IMAGE_PATH);
-    QImage* img=new QImage;
-    img->load(filename);
-    ui->image->setPixmap(QPixmap::fromImage(*img));
 }
 
 HelpForm::~HelpForm()

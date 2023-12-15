@@ -1,3 +1,4 @@
+#include "logger.hpp"
 #include "nmlib.hpp"
 
 #include <algorithm>
@@ -267,17 +268,17 @@ resultTable utils::RK3(std::function<double(double, double)>&& rhs, const config
 
     if (!cfg.LEC) {
         size_t i = 0;
-        while (xi >= x_min && xi + stepi < x_max && i <= N_max) {
+        while ((xi >= x_min) && (x_max - (xi + stepi) >= cfg.brdr_prec)  && (i < N_max)) {
             vi = RK3_STEP(std::move(rhs), stepi, xi, vi);
             xi = xi + stepi;
             table.push_back({ xi, vi, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, stepi, 0, 0, 0.f, 0.f });
+            i++;
         }
-        return table;
     } else {
         int i = 0;
         double v1, v2;
         double viv2i, LocalError = 0.f, Old_LocalError;
-        while (xi >= x_min && xi + stepi < x_max && i <= N_max) {
+        while ((xi >= x_min) && (x_max - (xi + stepi) >= cfg.brdr_prec)  && (i < N_max)) {
             v1 = RK3_STEP(std::move(rhs), stepi, xi, vi);
             v2 = RK3_STEP(std::move(rhs), stepi / 2, xi, vi);
             v2 = RK3_STEP(std::move(rhs), stepi / 2, xi + stepi / 2, v2);
@@ -303,7 +304,6 @@ resultTable utils::RK3(std::function<double(double, double)>&& rhs, const config
                 C1++;
                 i++;
             }
-            return table;
         }
     }
     return table;
@@ -348,23 +348,24 @@ resultTable utils::RK3_SOE(std::function<double(double, double, double)>&& rhs1,
     N_max = cfg.N_max;
     eps = cfg.eps;
 
+    LOG_DEBUG_CLI(N_max);
     table.push_back({ xi, vi, yi, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, stepi, 0, 0, 0.f, 0.f });
 
     if (!cfg.LEC) {
         size_t i = 0;
-        while (xi >= x_min && xi + stepi < x_max && i < N_max) {
+        while ((xi >= x_min) && (x_max - (xi + stepi) >= cfg.brdr_prec)  && (i < N_max)) {
             auto [vi_new, yi_new] = RK3_SOE_STEP(std::move(rhs1), std::move(rhs2), stepi, xi, vi, yi);
             xi = xi + stepi;
             vi = vi_new;
             yi = yi_new;
 
             table.push_back({ xi, vi, yi, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, stepi, 0, 0, 0.f, 0.f });
+            i++;
         }
-        return table;
     } else {
         double LocalError, Old_LocalError, viv2i, yiy2i;
         size_t i = 0;
-        while (xi >= x_min && xi + stepi < x_max && i < N_max) {
+        while ((xi >= x_min) && (x_max - (xi + stepi) >= cfg.brdr_prec)  && (i < N_max)) {
             //LOG_DEBUG_CLI("Start RK4_SOE with localstecpcontrol", cfg);
             auto tmp1 = RK3_SOE_STEP(std::move(rhs1), std::move(rhs2), stepi, xi, vi, yi);
             auto tmp2 = RK3_SOE_STEP(std::move(rhs1), std::move(rhs2), stepi / 2, xi, vi, yi);
@@ -404,7 +405,6 @@ resultTable utils::RK3_SOE(std::function<double(double, double, double)>&& rhs1,
                 C1++;
             }
         }
-        return table;
     }
     return (table);
 }

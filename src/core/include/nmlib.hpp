@@ -90,9 +90,10 @@ struct config {
            double A,
            double B,
            double C,
+           double brd_prec,
            std::bitset<14> isColVis)
-        : x_min(x_min), x_max(x_max), x_0(x_0), u_0(u_0), du_0(du_0), step(step), N_max(N_max), LEC(LEC), eps(eps), A(A), B(B), C(C), isColVisible(isColVis) {}
-    config(std::tuple<double, double, double, double, double, double, uint, bool, double, double, double, double> tpl)
+        : x_min(x_min), x_max(x_max), x_0(x_0), u_0(u_0), du_0(du_0), step(step), N_max(N_max), LEC(LEC), eps(eps), A(A), B(B), C(C), brdr_prec(brd_prec), isColVisible(isColVis) {}
+    config(std::tuple<double, double, double, double, double, double, uint, bool, double, double, double, double, double> tpl)
         : config(std::get<0>(tpl),
                  std::get<1>(tpl),
                  std::get<2>(tpl),
@@ -105,6 +106,7 @@ struct config {
                  std::get<9>(tpl),
                  std::get<10>(tpl),
                  std::get<11>(tpl),
+                 std::get<12>(tpl),
                  0b11111111111111) {}
     // Left and right limits for x variable
     double x_min = 0.l;
@@ -124,6 +126,8 @@ struct config {
     double A = 0.l;
     double B = 0.l;
     double C = 0.l;
+
+    double brdr_prec = 0.l; // right boarder precision
 
     std::bitset<14> isColVisible = { 0b11111111111111 };  // bit set which keeps visibility of each column in table (0 is not visible and 1 is visible)
     // keep in mind that order of bits is inverted!!!
@@ -151,20 +155,20 @@ struct config {
 };
 
 namespace utils {
-/// @brief make config from python input
-config make_config(const double& x_min,
-                   const double& x_max,
-                   const double& x_0,
-                   const double& u_0,
-                   const double& du_0,
-                   const double& step,
-                   const uint& N_max,
-                   const bool& LEC,
-                   const double& eps,
-                   const double& A,
-                   const double& B,
-                   const double& C,
-                   std::bitset<14>);
+// /// @brief make config from python input
+// config make_config(const double& x_min,
+//                    const double& x_max,
+//                    const double& x_0,
+//                    const double& u_0,
+//                    const double& du_0,
+//                    const double& step,
+//                    const uint& N_max,
+//                    const bool& LEC,
+//                    const double& eps,
+//                    const double& A,
+//                    const double& B,
+//                    const double& C,
+//                    std::bitset<14>);
 
 /// numerical method
 resultTable RK4(std::function<double(double, double)> rhs, const config& cfg);
@@ -203,12 +207,12 @@ std::function<double(const double&)> make_test_true_sol(const double& x_0, const
 
 void calculate_global_error(resultTable& tbl, std::function<double(const double&)>&& f);
 
-double find_max_LE(const resultTable& tbl);
+std::tuple<double, double> find_max_LE(const resultTable& tbl);
 
-double find_max_h(const resultTable& tbl);
+std::tuple<double, double> find_max_h(const resultTable& tbl);
 
-double find_min_h(const resultTable& tbl);
+std::tuple<double, double> find_min_h(const resultTable& tbl);
 
-double find_max_uvi(const resultTable& tbl);
+std::tuple<double, double> find_max_uvi(const resultTable& tbl);
 
 void dumpTableInFile(const resultTable&, std::ofstream&);

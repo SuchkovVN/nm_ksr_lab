@@ -94,12 +94,15 @@ void MainWindow::on_getdata_buttom_clicked() {
     A = this->ui->lineEdit_a->text().toDouble();
     B = this->ui->lineEdit_b->text().toDouble();
     C = this->ui->lineEdit_c->text().toDouble();
+    brd_prec = this->ui->lineEdit_bdr_pec->text().toDouble();
 
-    cfg = { x_begin, x_end, x_start, y_start, du, h, N, LEC, precision, A, B, C, 0b11111111111111 };
+    cfg = { x_begin, x_end, x_start, y_start, du, h, N, LEC, precision, A, B, C, brd_prec, 0b11111111111111 };
 
     // for system w/ vi and yi w/o LEC (for LEC default value is applicable)
     if (!LEC) {
-        cfg.set_col_visibility(0b11000000000111);
+        cfg.set_col_visibility(0b11000000000011);
+    } else {
+        cfg.set_col_visibility(0b11111110000011);
     }
     // if you have only one variable u(x) in your task, you need to specify col_visibility as 0b11000000000011 w/ no lec
     // and 0b11111110101011 if lec is off (this both cases applicable only if you have a true solution. 
@@ -133,17 +136,48 @@ void MainWindow::on_getdata_buttom_clicked() {
         break;
     }
 
-    max_LE = find_max_LE(res1);
-    max_step = find_max_h(res1);
-    max_uvi = find_max_uvi(res1);
-    min_step = find_min_h(res1);
-    steps_num = res1.size() - 1;
+    // max_LE = find_max_LE(res1);
+    // max_step = find_max_h(res1);
+    // max_uvi = find_max_uvi(res1);
+    // min_step = find_min_h(res1);
+    // steps_num = res1.size() - 1;
+
+    auto [max_LE, max_LE_x] = find_max_LE(res1);
+    auto [max_step, max_step_x] = find_max_h(res1);
+    auto [min_step, min_step_x] = find_min_h(res1);
+    auto [max_uvi, max_uvi_x] = find_max_uvi(res1);
+
+    size_t steps_num = res1.size() - 1;
+    size_t total_augs = res1.back().C2;
+    size_t total_dims = res1.back().C1;
+
+    double last_x = res1.back().xi;
+    double last_v = res1.back().vi;
+
+    double brd_dist = x_end -  res1.back().xi;
+
+    if(!LEC) {
+        this->ui->max_le_txt->setText("--");
+        this->ui->max_ole_t->setText("--");
+        this->ui->step_aug->setText("--");
+        this->ui->step_dim->setText("--");
+    } else {
+        this->ui->max_le_txt->setText(QString::number(max_LE));
+        this->ui->max_ole_t->setText(QString::number(max_LE_x));
+        this->ui->step_aug->setText(QString::number(total_augs));
+        this->ui->step_dim->setText(QString::number(total_dims));
+    }
 
     this->ui->max_h_txt->setText(QString::number(max_step));
+    this->ui->max_step_t->setText(QString::number(max_step_x));
     this->ui->min_h_txt->setText(QString::number(min_step));
+    this->ui->min_step_t->setText(QString::number(min_step_x));
     this->ui->max_glob_txt->setText(QString::number(max_uvi));
-    this->ui->max_le_txt->setText(QString::number(max_LE));
+    this->ui->max_glob_t->setText(QString::number(max_uvi_x));
     this->ui->step_num_txt->setText(QString::number(steps_num));
+    this->ui->last_t->setText(QString::number(last_x));
+    this->ui->last_v->setText(QString::number(last_v));
+    this->ui->right_end_d->setText(QString::number(brd_dist));
 }
 
 //void MainWindow::on_Help_buttom_clicked(){};
@@ -188,7 +222,7 @@ void MainWindow::on_button_table_clicked() {
 
     std::cout << res1.size() << std::endl;
 
-    std::vector<const char*> horizontalLabels = { "x", "v1", "v2", "v1_2", "v2_2", "v1-v1_2", "v2-v2_2", "ОЛП", "ОЛП/ОЛПП", "h", "C1", "C2", "u1", "v1-u1" };
+    std::vector<const char*> horizontalLabels = { "t", "v", "y", "v_2", "v2_2", "v-v_2", "v2-v2_2", "ОЛП", "ОЛП/ОЛПП", "h", "Ум. шаг", "Ув. шаг", "u", "v-u" };
     QStringList hlabels;
 
     for (size_t i = 0; i < 14; i++) {

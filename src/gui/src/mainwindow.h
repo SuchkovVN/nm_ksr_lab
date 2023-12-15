@@ -5,6 +5,8 @@
 #include "helpform.h"
 #include <QWidget>
 #include <QVector>
+#include <cmath>
+#include <cstddef>
 
 #include "nmlib.hpp"
 
@@ -63,13 +65,22 @@ private:
     double du;
     resultTable res1;
     double A, B, C;   
+    double brd_prec = 0.l;
     QColor col = QColor(0, 0, 255);
 
-    double max_LE = 0.l;
-    double max_step = 0.l;
-    double min_step = 0.l;
-    double max_uvi = 0.l;
-    size_t steps_num = 0;
+    // double max_LE = 0.l;
+    // double max_LE_x = 0.l;
+    // double max_step = 0.l;
+    // double max_step_x = 0.l;
+    // double min_step = 0.l;
+    // double min_step_x = 0.l;
+    // double max_uvi = 0.l;
+    // double max_uvi_x = 0.l;
+    // double last_x = 0.l;
+    // double last_v = 0.l;
+    // size_t steps_num = 0;
+    // size_t total_step_augs = 0;
+    // size_t total_step_dims = 0;
     config cfg;
 
     HelpForm form;

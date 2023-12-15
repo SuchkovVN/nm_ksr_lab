@@ -20,7 +20,7 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 
 target_include_directories(${TARGET_NAME} PRIVATE include)
 
-set(IMAGE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/image.png" CACHE FILEPATH "path to help image")
+set(IMAGE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/image_help.png" CACHE FILEPATH "path to help image")
 
 target_compile_definitions(${TARGET_NAME} PUBLIC IMAGE_PATH="${IMAGE_PATH}")
 
