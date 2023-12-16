@@ -20,8 +20,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->ui->plot->yAxis->setRange(-7, 7);
 
     this->ui->plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
-
-    func = 0;
 }
 
 MainWindow::~MainWindow() {
@@ -105,36 +103,23 @@ void MainWindow::on_getdata_buttom_clicked() {
         cfg.set_col_visibility(0b11111110000011);
     }
     // if you have only one variable u(x) in your task, you need to specify col_visibility as 0b11000000000011 w/ no lec
-    // and 0b11111110101011 if lec is off (this both cases applicable only if you have a true solution. 
+    // and 0b11111110101011 if lec is off (this both cases applicable only if you have a true solution.
     // Otherwise you need to set two first bits to zero in cases discribed above)
 
-    switch (func) {
-    case 0:
-        // res1 = task_rk4(test_rhs, cfg);
-        break;
-    case 1:
-        // res1 = task_rk4(task1_rhs, cfg);
-        break;
-    case 2: {
-        static auto task2_rhs1 = [&](double x, double u, double du) {
-            return du;
-        };
-        static auto task2_ths2 = [&](double x, double u, double du) {
-            return -(B / A) * du - (C / A) * u;
-        };
-        res1 = utils::RK3_SOE(std::move(task2_rhs1), std::move(task2_ths2), cfg);
+    static auto task2_rhs1 = [&](double x, double u, double du) {
+        return du;
+    };
+    static auto task2_ths2 = [&](double x, double u, double du) {
+        return -(B / A) * du - (C / A) * u;
+    };
+    res1 = utils::RK3_SOE(std::move(task2_rhs1), std::move(task2_ths2), cfg);
 
-        static const double bp = std::sqrt(4 * A * C - B * B) / (2 * A);
-        static const double ap = -(B / (2 * A));
-        static const double fp = -1 * ap / bp;
-        calculate_global_error(res1, [&](const double& x) -> double {
-            return 10 * std::exp(ap * x) * (std::cos(bp * x) + fp * std::sin(bp * x));
-        });
-        break;
-    }
-    default:
-        break;
-    }
+    static const double bp = std::sqrt(4 * A * C - B * B) / (2 * A);
+    static const double ap = -(B / (2 * A));
+    static const double fp = -1 * ap / bp;
+    calculate_global_error(res1, [&](const double& x) -> double {
+        return 10 * std::exp(ap * x) * (std::cos(bp * x) + fp * std::sin(bp * x));
+    });
 
     // max_LE = find_max_LE(res1);
     // max_step = find_max_h(res1);
@@ -154,9 +139,9 @@ void MainWindow::on_getdata_buttom_clicked() {
     double last_x = res1.back().xi;
     double last_v = res1.back().vi;
 
-    double brd_dist = x_end -  res1.back().xi;
+    double brd_dist = x_end - res1.back().xi;
 
-    if(!LEC) {
+    if (!LEC) {
         this->ui->max_le_txt->setText("--");
         this->ui->max_ole_t->setText("--");
         this->ui->step_aug->setText("--");
@@ -247,10 +232,6 @@ void MainWindow::on_button_table_clicked() {
             row_tuple,
             std::make_index_sequence<std::tuple_size<decltype(row_tuple)>::value>{});
     }
-}
-
-void MainWindow::on_comboBox_activated(int index) {
-    func = index;
 }
 
 void MainWindow::on_HelpButton_clicked() {

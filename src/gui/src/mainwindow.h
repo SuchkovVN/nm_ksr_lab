@@ -48,8 +48,6 @@ private slots:
 
     void on_button_table_clicked();
 
-    void on_comboBox_activated(int index);
-
     void on_HelpButton_clicked();
 
 private:
@@ -60,7 +58,6 @@ private:
     double x_start, y_start;
     double precision;
     uint N;
-    int func;
     int count_plot = 0;
     double du;
     resultTable res1;
